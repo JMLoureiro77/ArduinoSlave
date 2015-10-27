@@ -28,11 +28,11 @@
 #define get_variable        6  //x.0
 #define configure_pin       7
 
-#define digital_in
-#define digital_out //start low
-#define digital_out_start_high
-#define analog out //(PWM)
-#define digital_input_pullup
+#define digital_in				1
+#define digital_out 			2//start low
+#define digital_out_start_high	3
+#define analog_out 				4//(PWM)
+#define digital_input_pullup	5
 
 #ifndef Slave_h
 # define Slave_h
