@@ -10,4 +10,6 @@ To upgrade esp8266 with:
 - Variable exchange 
 - ESP unsupported libraries can be put on Slave & sen values
 
+Souliss users https://www.youtube.com/watch?v=Rrf0up6YU7s
+
 By jmloureiro77 & Juan Pinto
