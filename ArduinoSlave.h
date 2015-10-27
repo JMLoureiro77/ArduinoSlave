@@ -86,7 +86,7 @@ class Slave
 	void sV(uint8 nVar, uint16_t nVarV); //send variable, store variable
 	void gV(uint8 nVar);				//get variable
 	float aV[8];			//analog read output
-	bool dD[14];			//digital read output
+	bool dV[14];			//digital read output
 	uint16_t nVar[10];		//valiable value
 	
 
