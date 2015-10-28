@@ -1,5 +1,5 @@
 /****************************************************************************
-	Souliss - ArduinoSlave
+	ArduinoSlave
     Copyright (C) 2015  Jose Manuel Loureiro & Juan Pinto
 
     This program is free software: you can redistribute it and/or modify
