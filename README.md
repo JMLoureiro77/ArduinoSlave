@@ -8,7 +8,7 @@ To upgrade esp8266 with:
 - 11 digital 5v IOs
 - PWM 
 - Variable exchange 
-- ESP unsupported libraries can be put on Slave & sen values
+- ESP unsupported libraries can be put on Slave & send values
 
 Souliss users https://www.youtube.com/watch?v=Rrf0up6YU7s
 
