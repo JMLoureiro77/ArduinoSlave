@@ -1,0 +1,4 @@
+
+v0.2- Recupero uso de eeprom para que slave reinicie
+	con la última configuración pasado un tiempo.
+v0.1- funcionando

@@ -3,7 +3,7 @@
    
 	by jmloureiro77 & Juan Pinto
 
-	flash 5496 bytes (17% 328P)
+	flash 5722 bytes (18% 328P)
 	RAM    271 bytes (13% 328P)
 
 Recive char y convierte en tres int[3]=  int[0].int[1].int2[2].
@@ -44,6 +44,7 @@ Integración con SS
 Un ESP con el codigo de ss y sin declarar usart
 
 *********************************************************************/
+#include <EEPROM.h>
 byte pinConf[14];//0,1 serial(not used)
                 //D2-D13
 String inputString= "";
@@ -54,48 +55,45 @@ bool needReset=0;
 ///*
 int nVar[10];
 //*/
-bool a=1;
-//===============================================================
-void setup() {
-  Serial.begin(9600);
+byte a=10;//after a seconds, slave begin with last pinConf
 
-//pin conf
-while (a){
-    serialEvent();
-    for (int i=2;i<14;i++) {
-      if(pinConf[i]==1){        //digital in
-        pinMode(i,INPUT);}
-      if(pinConf[i]==2){        //digital out start low
-        digitalWrite(i,LOW);
-        pinMode(i,OUTPUT);}
-      if(pinConf[i]==3){        //digital out start high
-        digitalWrite(i,HIGH);
-        pinMode(i,OUTPUT);}
-      if(pinConf[i]==4&&i==(3||5||6||9||10||11)){//analog out
-        pinMode(i,OUTPUT);}
-      if(pinConf[i]==5&&i){     //digital input_pullup
-        pinMode(i,INPUT_PULLUP);}
-    }//for
-  }//while
+//=================================================================
+void setup() {
+//=================================================================
+	eepromRead();
+	Serial.begin(9600);
+	while (a){
+		serialEvent();
+		if(millis()%1000==0){a--;}
+	}//while
+	for (int i=2;i<14;i++) {
+		if(pinConf[i]==1){        //digital in
+			pinMode(i,INPUT);}
+		if(pinConf[i]==2){        //digital out start low
+			digitalWrite(i,LOW);
+			pinMode(i,OUTPUT);}
+		if(pinConf[i]==3){        //digital out start high
+			digitalWrite(i,HIGH);
+			pinMode(i,OUTPUT);}
+		if(pinConf[i]==4&&i==(3||5||6||9||10||11)){//analog out
+			pinMode(i,OUTPUT);}
+		if(pinConf[i]==5&&i){     //digital input_pullup
+			pinMode(i,INPUT_PULLUP);}
+	}//for
+	eepromUpdate();
 }
 
-//===============================================================
+//=================================================================
 void loop() {
+//=================================================================
 
   serialEvent();
-   
-  if(millis()%15000==0){
-    int a=1;}//No quitar, sin no funciona
-/*  for (int i=2;i<21;i++) {//serial monitor
-      Serial.print(i);
-      Serial.print(": ");
-      Serial.println(pinConf[i]);
-    }
-  }*/
+  if(millis()%15000==0){}//at least some code 
+  
+	//you can put more code here
+	
 }
-
-
-//===============================================================
+//=================================================================
 void serialEvent() {
   while (Serial.available()) {
     char inChar = (char)Serial.read();
@@ -171,7 +169,7 @@ void serialEvent() {
           }
         }
       break;
-      case 9://en pincof
+      case 9://end pinCof
          a=0;
       break;
       default:
@@ -182,4 +180,14 @@ void serialEvent() {
     inputInt[2]=0;
     stringComplete = false;
   }//if stringcomplete
+}
+void eepromRead(){
+  for (int i=2;i<14;i++){
+    pinConf[i]=EEPROM.read(i);
+  }//for
+}
+void eepromUpdate(){
+  for (int i=2;i<14;i++){
+    EEPROM.update(i, pinConf[i]);
+  }//for
 }
