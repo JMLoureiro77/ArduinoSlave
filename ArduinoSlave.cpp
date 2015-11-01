@@ -20,41 +20,51 @@
 *****************************************************************************/
 
 #include "ArduinoSlave.h"
-
+//=====================================================================================
+// Usar en Setup
+//=====================================================================================
 void Slave::Conf()
 {
-   Serial.begin(9600);
+	Serial.begin(9600);	
 	delay(2000);//wait arduino On
-	Serial.print("7.2."); Serial.print(SlavePin2,DEC); Serial.println("."); 
-	delay(10);
-	Serial.print("7.3."); Serial.print(SlavePin3,DEC); Serial.println("."); 
-	delay(10);
-	Serial.print("7.4."); Serial.print(SlavePin4,DEC); Serial.println("."); 
-	delay(10);
-	Serial.print("7.5."); Serial.print(SlavePin5,DEC); Serial.println("."); 
-	delay(10);
-	Serial.print("7.6."); Serial.print(SlavePin6,DEC); Serial.println("."); 
-	delay(10);
-	Serial.print("7.7."); Serial.print(SlavePin7,DEC); Serial.println("."); 
-	delay(10);
-	Serial.print("7.8."); Serial.print(SlavePin8,DEC); Serial.println("."); 
-	delay(10);
-	Serial.print("7.9."); Serial.print(SlavePin9,DEC); Serial.println("."); 
-	delay(10);
-	Serial.print("7.10."); Serial.print(SlavePin10,DEC); Serial.println("."); 
-	delay(10);
-	Serial.print("7.11."); Serial.print(SlavePin11,DEC); Serial.println("."); 
-	delay(10);
-	Serial.print("7.12."); Serial.print(SlavePin12,DEC); Serial.println("."); 
-	delay(10);
-	Serial.print("7.13."); Serial.print(SlavePin13,DEC); Serial.println("."); 
-	delay(10);
-    Serial.println("9.0.0."); //end pinConf
-	delay(1000); //wait arduino pin conf take effect
+	
+	if(!SlavePin2 && !SlavePin3 && !SlavePin4 && !SlavePin5 && !SlavePin6 &&
+	!SlavePin7 && !SlavePin8 && !SlavePin8 && !SlavePin10 && !SlavePin11 && 
+	!SlavePin12 && !SlavePin13){;}
+	else{		
+		Serial.print("7.2."); Serial.print(SlavePin2,DEC); Serial.println("."); 
+		delay(10);
+		Serial.print("7.3."); Serial.print(SlavePin3,DEC); Serial.println("."); 
+		delay(10);
+		Serial.print("7.4."); Serial.print(SlavePin4,DEC); Serial.println("."); 
+		delay(10);
+		Serial.print("7.5."); Serial.print(SlavePin5,DEC); Serial.println("."); 
+		delay(10);
+		Serial.print("7.6."); Serial.print(SlavePin6,DEC); Serial.println("."); 
+		delay(10);
+		Serial.print("7.7."); Serial.print(SlavePin7,DEC); Serial.println("."); 
+		delay(10);
+		Serial.print("7.8."); Serial.print(SlavePin8,DEC); Serial.println("."); 
+		delay(10);
+		Serial.print("7.9."); Serial.print(SlavePin9,DEC); Serial.println("."); 
+		delay(10);
+		Serial.print("7.10."); Serial.print(SlavePin10,DEC); Serial.println("."); 
+		delay(10);
+		Serial.print("7.11."); Serial.print(SlavePin11,DEC); Serial.println("."); 
+		delay(10);
+		Serial.print("7.12."); Serial.print(SlavePin12,DEC); Serial.println("."); 
+		delay(10);
+		Serial.print("7.13."); Serial.print(SlavePin13,DEC); Serial.println("."); 
+		delay(10);
+		Serial.println("9.0.0."); //end pinConf
+		delay(1000); //wait arduino pin conf take effect
+	}
 }
 
 
-//===================================================================
+//=====================================================================================
+// Usar en loop
+//=====================================================================================
 void Slave::Comm() {
 	while (Serial.available()) {
 		char inChar = (char)Serial.read();
@@ -93,8 +103,9 @@ void Slave::Comm() {
 	stringComplete = false;
 	}//if stringcomplete
 }  
-//===================================================================
-
+//=====================================================================================
+// dW() solo envia si ha cambiado el valor a escribir
+//=====================================================================================
 void Slave::dW(uint8 pin, bool val){//digital write
 	if(val!=lastDWVal[pin]){
 	Serial.print("1.");
@@ -103,12 +114,16 @@ void Slave::dW(uint8 pin, bool val){//digital write
 	lastDWVal[pin]=val;
 	}
 }
-
+//=====================================================================================
+// debe usarse en un periodo para no escribir en serial cada vez que ejecute 
+//=====================================================================================
 void Slave::dR(uint8 pin){//digital read
 	Serial.print("2.");
 	Serial.print(pin);Serial.print(".0.");
 }
-
+//=====================================================================================
+// aW() solo envia si ha cambiado el valor a escribir
+//=====================================================================================
 void Slave::aW(uint8 pin, uint16_t aWVal){//analog write
 	if(val!=lastAWVal[pin]){
 	Serial.print("3.");
@@ -117,17 +132,24 @@ void Slave::aW(uint8 pin, uint16_t aWVal){//analog write
 	lastAWVal[pin]=aWVal;
 	}
 }
-
+//=====================================================================================
+// debe usarse en un periodo para no escribir en serial cada vez que ejecute 
+//=====================================================================================
 void Slave::aR(uint8 pin){				//analog read
 	Serial.print("4.");
 	Serial.print(pin);Serial.println(".0.");
 }
-
+//=====================================================================================
+// debe usarse en un periodo para no escribir en serial cada vez que ejecute 
+//=====================================================================================
 void Slave::sV(uint8 nVar, uint16_t nVarV){ //send variavle, store variable
 	Serial.print("5.");
 	Serial.print(nVar);Serial.print(".");
 	Serial.print(nVarV);Serial.println(".");
 }
+//=====================================================================================
+// debe usarse en un periodo para no escribir en serial cada vez que ejecute 
+//=====================================================================================
 
 void Slave::gV(uint8 nVar){			//get nVar
 	Serial.print("6.");
