@@ -26,12 +26,11 @@
 void Slave::Conf()
 {
 	Serial.begin(9600);	
-	delay(2000);//wait arduino On
+	delay(2000);//wait arduino On & capacitor charge
 	
-	if(!SlavePin2 && !SlavePin3 && !SlavePin4 && !SlavePin5 && !SlavePin6 &&
-	!SlavePin7 && !SlavePin8 && !SlavePin8 && !SlavePin10 && !SlavePin11 && 
-	!SlavePin12 && !SlavePin13){;}
-	else{		
+	if(SlavePin2 || SlavePin3 || SlavePin4 || SlavePin5 || SlavePin6 || SlavePin7
+	|| SlavePin8 || SlavePin8 || SlavePin10 || SlavePin11 || SlavePin12 || SlavePin13)
+	{		
 		Serial.print("7.2."); Serial.print(SlavePin2,DEC); Serial.println("."); 
 		delay(10);
 		Serial.print("7.3."); Serial.print(SlavePin3,DEC); Serial.println("."); 
