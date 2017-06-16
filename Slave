@@ -1,0 +1,236 @@
+ /******************************************************************** 
+  Arduino Slave 328P (UNO,NANO,MICRO)
+   
+  flash  bytes (% 328P)
+  RAM     bytes (% 328P)
+
+Recive byte y convierte en tres int[3]=  int[0].int[1].int2[2].
+  *tb hay que mandar el último punto
+
+Esp send:            int[0]  int[1]  int[2]
+                    
+digital write         1     pin       value
+digital read          2     pin       -
+analog write          3     pin       value
+analog read           4     pin       -
+store variable        5     nVar      value
+get  variable         6     nvar      -
+configure pin         7     pin       confVal
+clear pinConf         8     0         -
+send back pinConf     8     1         -
+end pinConf &reset    8     2         - 
+
+confVal
+  1   digital in
+  2   digital out start low
+  3   digital out start high
+  4   analog out (PWM)
+  5   digital input_pullup
+
+
+
+8.0.0.    clear arduino pinConf
+7.13.2.   configura el pin 13 como salida digital start low
+8.2.0.    guarda conf en eeprom y resetea arduino
+1.13.1.   enciende el led de pin 13
+1.13.0.   apaga el led del pin 13
+5.0.1380. guarda 1380 en nVar[0]
+6.0.0.    devuelve el valor de nVar[0] "6.0.1380."
+*********************************************************************/
+#include <Wire.h>
+#include <EEPROM.h>
+
+const int MY_ADDRESS = 9;  //iic adress must be specified in master
+
+byte pinConf[17];//18-sda 19-scl //faltan 20 y 21 en nano
+int inputInt[3];
+byte index=0;
+bool needReset=0;
+int nVar[10];
+
+byte c=1;//after 5 seconds, slave begin with last pinConf
+
+
+String response;
+bool sendResponseSize;
+
+void setup() {
+  
+  Serial.begin(115200);
+  Wire.begin (MY_ADDRESS);
+  
+  Wire.onReceive (receiveEvent);  // interrupt handler for incoming messages
+  Wire.onRequest (requestEvent);  // interrupt handler for when data is wanted
+
+/////////////////////////////////////////////////////
+  eepromRead();
+  for (int i=2;i<14;i++) {
+    if(pinConf[i]==1){        //digital in
+      pinMode(i,INPUT);}
+    if(pinConf[i]==2){        //digital out start low
+      digitalWrite(i,LOW);
+      pinMode(i,OUTPUT);}
+    if(pinConf[i]==3){        //digital out start high
+      digitalWrite(i,HIGH);
+      pinMode(i,OUTPUT);}
+    if(pinConf[i]==4&&i==(3||6||9||10||11)){//analog out//pwm
+      pinMode(i,OUTPUT);}
+    if(pinConf[i]==5&&i){     //digital input_pullup
+      pinMode(i,INPUT_PULLUP);}
+  }//for
+}  // end of setup  
+//=================================================================
+void loop() {
+//=================================================================
+
+
+}  // end of loop
+//=================================================================
+void receiveEvent (int howMany) {//howMany= msg + final byte
+//=================================================================
+  String inputString = "";
+  for(int i=0;i<howMany;i++){
+      char inChar = (char)Wire.read();
+    if (inChar != '.') {
+      inputString += inChar;
+      }
+    if (inChar == '.') {
+      inputInt[index]=inputString.toInt();
+      inputString = "";
+      index++;
+      }
+    if (index == 3) {
+      index=0;
+      }
+  }//for
+      
+  Serial.println(inputInt[0]);
+  Serial.println(inputInt[1]);
+  Serial.println(inputInt[2]);
+
+  response="";
+
+if(inputInt[0]==1)     {    //digital write
+         if(1<inputInt[1]<17&&(inputInt[2]==0||inputInt[2]==1)){
+          digitalWrite(inputInt[1],inputInt[2]);
+          response+="1.";
+          response+=inputInt[1];
+          response+=".";
+          response+=inputInt[2];
+          response+=".";
+        }
+}
+if(inputInt[0]==2)     {//digital read
+          if(1<inputInt[1]<17){
+          response+="2.";
+          response+=inputInt[1];
+          response+=".";
+          response+=digitalRead(inputInt[1]);
+          response+=".";
+        }
+}
+if(inputInt[0]==3)     {//analog write
+         if((inputInt[1]==(0||1||2||3||6||7))&&(0<=inputInt[2]<1024)){
+          analogWrite(inputInt[1],inputInt[2]);
+          response+="3.";
+          response+=inputInt[1];
+          response+=".";
+          response+=inputInt[2];
+          response+=".";
+        } 
+}
+if(inputInt[0]==4)     {//analog read
+        if((inputInt[1]==(0||1||2||3||6||7))){//4-5 sda-scl
+          response+="4.";
+          response+=inputInt[1];
+          response+=".";
+          response+=analogRead(inputInt[1]);
+          response+=".";
+        }
+}
+if(inputInt[0]==5)     {
+        nVar[inputInt[1]]=inputInt[2];//store nVar
+          response+="5.";
+          response+=inputInt[1];
+          response+=".";
+          response+=analogRead(inputInt[1]);
+          response+=".";        
+}
+if(inputInt[0]==6)     {      //send back nVar
+          response+="6.";
+          response+=inputInt[1];
+          response+=".";
+          response+=nVar[inputInt[1]];
+          response+=".";
+                  Serial.print(response);
+                  Serial.println("/");
+}
+if(inputInt[0]==7)     {//configure pin
+
+ //necesita desarrollo para configurar asi analogicos como output
+ 
+          if((inputInt[1]<17)&&(0<=inputInt[2]<6)){
+          pinConf[inputInt[1]]=inputInt[2];
+          response+="7.";
+          response+=inputInt[1];
+          response+=".";
+          response+=pinConf[inputInt[1]];
+          response+=".";
+          needReset=1;
+         }
+
+}
+if(inputInt[0]==8)     {
+        if(inputInt[1]==0){//clear pinConf
+          for (int i=0;i<17;i++) {
+            pinConf[i]=0;
+            }
+        }
+        if (inputInt[1]==1){//send pinConf to master
+          response+="8.";
+          response+=inputInt[1];
+          response+=".";
+          response+=pinConf[i];
+          response+=".";       
+        }
+        if(inputInt[1]==2){//reset
+            eepromUpdate();
+            needReset=1;
+            //still searching for software reset method
+        }
+    }
+    sendResponseSize=1;
+}
+//=================================================================
+void requestEvent (){
+//=================================================================
+  if(sendResponseSize==0){
+    char buff[response.length()+1];
+    response.toCharArray(buff, response.length()+1);
+    Wire.write(buff); 
+
+    Serial.print(buff);
+    Serial.println("*");
+    
+  }  
+  if(sendResponseSize==1){
+    Wire.write(response.length()+1);
+    sendResponseSize=0;
+
+    Serial.print(response.length()+1);
+    Serial.println("+");
+
+  }
+} 
+//=================================================================
+void eepromRead(){
+  for (int i=0;i<17;i++){
+    pinConf[i]=EEPROM.read(i);
+  }//for
+}
+void eepromUpdate(){
+  for (int i=0;i<17;i++){
+    EEPROM.update(i, pinConf[i]);
+  }//for
+}
+//=================================================================
