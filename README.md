@@ -13,6 +13,8 @@ Sigo buscando una manera de resetear arduino por software lo que permitiria conf
 
 La parte de configuracion de pines de esclavo como analog output necesita mejorar. 
 
+Esto ya no es una libreria, solo un par de codigos, uno para Master y otro para Slave.
+
 # ArduinoSlave
 
 Arduino library to Control Arduino by I2C with ESP8266 or other
