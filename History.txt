@@ -1,7 +1,8 @@
+v0.3- Migrado a bus IIC
 v0.2- como Slave.Comm() es necesario para iniciar
-	serial, o habria que hacerlo en setup, añado
+	serial, o habria que hacerlo en setup, aÃ±ado
 	comprobacion de pinConf[]. Si no se ha usado
 	salta las pausas y no hace nada mas
 v0.2- Recupero uso de eeprom para que slave reinicie
-	con la última configuración pasado un tiempo.
+	con la Ãºltima configuraciÃ³n pasado un tiempo.
 v0.1- funcionando
