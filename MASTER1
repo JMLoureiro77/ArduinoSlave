@@ -1,0 +1,135 @@
+//Master1 under hard work
+//no funcion la configuracion remota de pines de momento
+
+
+#include <Wire.h>
+
+const int SLAVE_ADDRESS = 9;
+
+byte a;
+
+String request;
+int inputInt[3];
+byte ind=0;
+int nVar[10];
+
+void setup ()  {
+//  Wire.begin (D4,D3);   
+ Wire.begin ();   
+ Wire.setClockStretchLimit(40000);    // in µs
+ Serial.begin (115200);  // start serial for output
+ 
+}  // end of setup
+//==================================================================================================
+void loop(){
+//==================================================================================================
+  gV(7);
+ 
+  delay (500);   
+}  // end of loop
+//==================================================================================================
+void Comm(String request){
+  char buff[sizeof(request)];
+  request.toCharArray(buff, sizeof(request));
+  Wire.beginTransmission (SLAVE_ADDRESS);
+  Wire.write(buff); 
+  Wire.endTransmission ();   
+  readResponse();
+}
+void readResponse(){
+  String inputString = "";
+  Wire.requestFrom (SLAVE_ADDRESS, 1); 
+  char inChar = Wire.read(); 
+        Serial.print (inChar);
+        Serial.println("*");
+  int t = inChar;
+        Serial.println (t);
+  Wire.requestFrom (SLAVE_ADDRESS, t);
+
+    for(int i=0;i<t;i++){
+      char inChar = (char)Wire.read();
+    if (inChar != '.') {
+      inputString += inChar;
+      }
+    if (inChar == '.') {
+      inputInt[ind]=inputString.toInt();
+      inputString = "";
+      ind++;
+      }
+    if (ind == 3) {
+      ind=0;
+      }
+  }//for
+       Serial.println(inputInt[0]);
+       Serial.println(inputInt[1]);
+       Serial.println(inputInt[2]);
+
+  }
+//=====================================================================================
+// dW() digital write (slave pin, value )
+//=====================================================================================
+void dW(int pin, bool val){
+  request="";
+  request+="1.";
+  request+=pin;
+  request+=".";
+  request+=val;
+  request+=".";
+  Comm(request);
+}//=====================================================================================
+// dR() digital Read (slave pin )
+//=====================================================================================
+void dR(int pin){
+  request="";
+  request+="2.";
+  request+=pin;
+  request+=".0.";
+  Comm(request);
+}
+//=====================================================================================
+// aW() (slave pin, value )
+//=====================================================================================
+void aW(int pin, int aWVal){//analog write
+  request="";
+  request+="3.";
+  request+=pin;
+  request+=".";
+  request+=aWVal;
+  request+=".";
+  Comm(request);
+}
+//=====================================================================================
+// anlogRead (Slave pin)
+//=====================================================================================
+void aR(int pin){        //analog read
+  request="";
+  request+="4.";
+  request+=pin;
+  request+=".0.";
+  Comm(request);
+}
+//=====================================================================================
+// send variable value
+//=====================================================================================
+void sV(int nVar, int nVarV){ //send variavle, store variable in slave
+  request="";
+  request+="5.";
+  request+=nVar;
+  request+=".";
+  request+=nVarV;
+  request+=".";
+  Comm(request);
+  Serial.print();Serial.println(".");
+}
+//=====================================================================================
+// get variable value
+//=====================================================================================
+void gV(int Var){     //get nVar
+  request="";
+  request+="6.";
+  request+=Var;
+  request+=".0.";
+  Comm(request);
+  nVar[Var]=inputInt[2];
+  Serial.println(nVar[Var]);
+}
