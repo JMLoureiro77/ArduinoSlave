@@ -1,4 +1,4 @@
-La comunicacion sereial bidireccional era muy inestable, por eso en la version 0.3 cambiamos a iic
+La comunicacion serial bidireccional era muy inestable, por eso en la version 0.3 cambiamos a iic
 
 La comunicacion iic permite mas de un esclavo. Master1 es el ejemplo para un solo esclavo y Master 2 es el ejemplo para dos o mas esclavos.
 
