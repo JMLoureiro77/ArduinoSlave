@@ -1,30 +1,28 @@
-La comunicacion serial bidireccional era muy inestable, por eso en la version 0.3 cambiamos a iic
-
-La comunicacion iic permite mas de un esclavo. Master1 es el ejemplo para un solo esclavo y Master 2 es el ejemplo para dos o mas esclavos.
-
-Slave es el codigo que hay que cargar en arduino. Es para un Arduino NANO o UNO y facilmente adaptable a Mega
-
-El "wiring" que he probado entre un wemosD1 y un Arduino Nano (version 5v) es SDA-SDA y SCL-SCL DIRECTAMENTE.
-No funciono con resistencias pullup ni con conversor de nivel,pero si horas y horas DIRECTAMENTE.
-El codigo master es para ESP8266 y permite cambiar SDA-SCL en el setup, con wire.begin(SDApin,SCLpin)
-
-La parte de configuración de pines en esclavo necesita mejorar. 
-Sigo buscando una manera de resetear arduino por software lo que permitiria configurarlo con ESP01, por el momento se me ocurre usar un pin de ESP para resetear al esclavo despues de enviar la configuración de pines
-
-La parte de configuracion de pines de esclavo como analog output necesita mejorar. 
-
-Esto ya no es una libreria, solo un par de codigos, uno para Master y otro para Slave.
-
 # ArduinoSlave
+Code pairs to control Arduino(one or more) from ESP8266 using IIC comunication.
 
-Arduino library to Control Arduino by I2C with ESP8266 or other
+MASTER1 is ESP's code to control one slave.
+MASTER2 is ESP's code to control two or more slaves.
+Slave is the code to flash in Arduino NANO(328P based)(&& Micro && UNO)
+SlaveMEGA is the code to flash in Arduino MEGA.
+
+IIC address of slave must be known by Master
+
+Tested direct wiring SDA-SDA SCL-SCL between wemosD1 and Arduino Nano (5v version).
+With pullup resistors or level converter not work for me.
+
+SDA-SCL can be changed on ESP using  wire.begin(SDApin,SCLpin)
+By default are D4 and D3 on WemosD1 or D1 and D2 on NodeMCU 1.0
+
 
 To upgrade esp8266 with:
 
-- 8 analog reads 0-5v
-- 11 digital 5v IOs
+- analog reads 0-5v
+- 5v digital  IOs
 - PWM 
 - Variable exchange 
 - ESP unsupported libraries can be put on Slave & send values
+
+Some more information in Spanish can be found in http://jmloureiro77.blogspot.com/2017/06/conunicacion-entre-esp8266-y-arduino.html
 
 By jmloureiro77 & Juan Pinto
