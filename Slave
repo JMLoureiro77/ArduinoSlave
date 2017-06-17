@@ -1,13 +1,13 @@
- /******************************************************************** 
+  /******************************************************************** 
   Arduino Slave 328P (UNO,NANO,MICRO)
    
-  flash  bytes (% 328P)
-  RAM     bytes (% 328P)
+  flash  7012 bytes (22% 328P)
+  RAM     459 bytes (22% 328P)
 
 Recive byte y convierte en tres int[3]=  int[0].int[1].int2[2].
   *tb hay que mandar el último punto
 
-Esp send:            int[0]  int[1]  int[2]
+Master send:         int[0]  int[1]  int[2]
                     
 digital write         1     pin       value
 digital read          2     pin       -
@@ -16,68 +16,52 @@ analog read           4     pin       -
 store variable        5     nVar      value
 get  variable         6     nvar      -
 configure pin         7     pin       confVal
-clear pinConf         8     0         -
-send back pinConf     8     1         -
-end pinConf &reset    8     2         - 
+send back pinConf     8     pin       -
+clear pinConf         9     0         -
 
 confVal
   1   digital in
   2   digital out start low
   3   digital out start high
-  4   analog out (PWM)
-  5   digital input_pullup
+  4   analog out (PWM) UNO,NANO(3,5,6,9,10,11)
+  5   digital input_pullup (invert logic  1=low 0=high)
+
+  defaut state is input if you not change nothing
+  send 0 to analog pins (14(A0),15(A1),16(A2),17(A3)) to return to adc if you have used in digital mode
+   18 & 19 used by IIC bus
+   Nano (20(A6) & 21(A7)) only adc mode
 
 
 
-8.0.0.    clear arduino pinConf
+9.0.0.    clear arduino pinConf
 7.13.2.   configura el pin 13 como salida digital start low
-8.2.0.    guarda conf en eeprom y resetea arduino
+8.13.0.   pide configuracion de pin13
 1.13.1.   enciende el led de pin 13
 1.13.0.   apaga el led del pin 13
 5.0.1380. guarda 1380 en nVar[0]
-6.0.0.    devuelve el valor de nVar[0] "6.0.1380."
+6.0.0.    devuelve el valor de nVar[0] 1380, "6.0.1380."
 *********************************************************************/
 #include <Wire.h>
 #include <EEPROM.h>
 
 const int MY_ADDRESS = 9;  //iic adress must be specified in master
 
-byte pinConf[17];//18-sda 19-scl //faltan 20 y 21 en nano
+byte pinConf[18];//18-sda 19-scl used
 int inputInt[3];
-byte index=0;
-bool needReset=0;
 int nVar[10];
-
-byte c=1;//after 5 seconds, slave begin with last pinConf
-
 
 String response;
 bool sendResponseSize;
-
+//=================================================================
 void setup() {
-  
+//=================================================================
   Serial.begin(115200);
   Wire.begin (MY_ADDRESS);
   
   Wire.onReceive (receiveEvent);  // interrupt handler for incoming messages
   Wire.onRequest (requestEvent);  // interrupt handler for when data is wanted
 
-/////////////////////////////////////////////////////
   eepromRead();
-  for (int i=2;i<14;i++) {
-    if(pinConf[i]==1){        //digital in
-      pinMode(i,INPUT);}
-    if(pinConf[i]==2){        //digital out start low
-      digitalWrite(i,LOW);
-      pinMode(i,OUTPUT);}
-    if(pinConf[i]==3){        //digital out start high
-      digitalWrite(i,HIGH);
-      pinMode(i,OUTPUT);}
-    if(pinConf[i]==4&&i==(3||6||9||10||11)){//analog out//pwm
-      pinMode(i,OUTPUT);}
-    if(pinConf[i]==5&&i){     //digital input_pullup
-      pinMode(i,INPUT_PULLUP);}
-  }//for
 }  // end of setup  
 //=================================================================
 void loop() {
@@ -89,6 +73,7 @@ void loop() {
 void receiveEvent (int howMany) {//howMany= msg + final byte
 //=================================================================
   String inputString = "";
+  byte index=0;
   for(int i=0;i<howMany;i++){
       char inChar = (char)Wire.read();
     if (inChar != '.') {
@@ -99,9 +84,9 @@ void receiveEvent (int howMany) {//howMany= msg + final byte
       inputString = "";
       index++;
       }
-    if (index == 3) {
+/*    if (index == 3) {
       index=0;
-      }
+      }*/
   }//for
       
   Serial.println(inputInt[0]);
@@ -111,7 +96,7 @@ void receiveEvent (int howMany) {//howMany= msg + final byte
   response="";
 
 if(inputInt[0]==1)     {    //digital write
-         if(1<inputInt[1]<17&&(inputInt[2]==0||inputInt[2]==1)){
+         if(1<inputInt[1]<18&&(inputInt[2]==0||inputInt[2]==1)){
           digitalWrite(inputInt[1],inputInt[2]);
           response+="1.";
           response+=inputInt[1];
@@ -121,7 +106,7 @@ if(inputInt[0]==1)     {    //digital write
         }
 }
 if(inputInt[0]==2)     {//digital read
-          if(1<inputInt[1]<17){
+          if(1<inputInt[1]<18){
           response+="2.";
           response+=inputInt[1];
           response+=".";
@@ -129,8 +114,8 @@ if(inputInt[0]==2)     {//digital read
           response+=".";
         }
 }
-if(inputInt[0]==3)     {//analog write
-         if((inputInt[1]==(0||1||2||3||6||7))&&(0<=inputInt[2]<1024)){
+if(inputInt[0]==3)     {//analog write (pwm)
+         if((inputInt[1]==(3||5||6||9||10||11))&&(0<=inputInt[2]<1025)){
           analogWrite(inputInt[1],inputInt[2]);
           response+="3.";
           response+=inputInt[1];
@@ -140,20 +125,20 @@ if(inputInt[0]==3)     {//analog write
         } 
 }
 if(inputInt[0]==4)     {//analog read
-        if((inputInt[1]==(0||1||2||3||6||7))){//4-5 sda-scl
-          response+="4.";
+        if((13<inputInt[1]<18)||(inputInt[1]==(20||21))){//A4(18)-A5(19) sda-scl
+         response+="4.";
           response+=inputInt[1];
           response+=".";
           response+=analogRead(inputInt[1]);
           response+=".";
         }
 }
-if(inputInt[0]==5)     {
-        nVar[inputInt[1]]=inputInt[2];//store nVar
+if(inputInt[0]==5)     {//store nVar
+        nVar[inputInt[1]]=inputInt[2];
           response+="5.";
           response+=inputInt[1];
           response+=".";
-          response+=analogRead(inputInt[1]);
+          response+=nVar[inputInt[1]];
           response+=".";        
 }
 if(inputInt[0]==6)     {      //send back nVar
@@ -162,44 +147,48 @@ if(inputInt[0]==6)     {      //send back nVar
           response+=".";
           response+=nVar[inputInt[1]];
           response+=".";
-                  Serial.print(response);
-                  Serial.println("/");
 }
-if(inputInt[0]==7)     {//configure pin
-
- //necesita desarrollo para configurar asi analogicos como output
- 
-          if((inputInt[1]<17)&&(0<=inputInt[2]<6)){
+if(inputInt[0]==7)     {//configure pin 
+     if((inputInt[1]<18)&&(0<=inputInt[2]<6)){
+        if (pinConf[inputInt[1]]!=inputInt[2]){
           pinConf[inputInt[1]]=inputInt[2];
+          if(pinConf[inputInt[1]]==(1||0)){      //in, default state
+            pinMode(inputInt[1],INPUT);}
+          if(pinConf[inputInt[1]]==2){           //digital out start low
+            digitalWrite(inputInt[1],LOW);
+            pinMode(inputInt[1],OUTPUT);}
+          if(pinConf[inputInt[1]]==3){           //digital out start high
+            digitalWrite(inputInt[1],HIGH);
+            pinMode(inputInt[1],OUTPUT);}
+          if(pinConf[inputInt[1]]==4&&inputInt[1]==(3||5||6||9||10||11)){//analog out//pwm
+            pinMode(inputInt[1],OUTPUT);}
+          if(pinConf[inputInt[1]]==5){     //digital input_pullup
+            pinMode(inputInt[1],INPUT_PULLUP);}
+            
           response+="7.";
           response+=inputInt[1];
           response+=".";
           response+=pinConf[inputInt[1]];
           response+=".";
-          needReset=1;
+          }
          }
 
 }
-if(inputInt[0]==8)     {
-        if(inputInt[1]==0){//clear pinConf
-          for (int i=0;i<17;i++) {
-            pinConf[i]=0;
-            }
-        }
-        if (inputInt[1]==1){//send pinConf to master
+if(inputInt[0]==8)     { //send pinConf to master
           response+="8.";
           response+=inputInt[1];
           response+=".";
-          response+=pinConf[i];
+          response+=pinConf[inputInt[1]];
           response+=".";       
-        }
-        if(inputInt[1]==2){//reset
-            eepromUpdate();
-            needReset=1;
-            //still searching for software reset method
-        }
     }
-    sendResponseSize=1;
+if(inputInt[0]==9)     {
+          for (int i=0;i<18;i++) {
+            pinConf[i]=1;
+            }
+          eepromUpdate();
+          response = "9.0.0.";
+}
+  sendResponseSize=1;
 }
 //=================================================================
 void requestEvent (){
@@ -208,29 +197,32 @@ void requestEvent (){
     char buff[response.length()+1];
     response.toCharArray(buff, response.length()+1);
     Wire.write(buff); 
-
-    Serial.print(buff);
-    Serial.println("*");
-    
   }  
   if(sendResponseSize==1){
     Wire.write(response.length()+1);
     sendResponseSize=0;
-
-    Serial.print(response.length()+1);
-    Serial.println("+");
-
   }
 } 
 //=================================================================
 void eepromRead(){
-  for (int i=0;i<17;i++){
+  for (int i=0;i<18;i++){
     pinConf[i]=EEPROM.read(i);
+    if(pinConf[i]==(1||0)){      //in, default state
+      pinMode(i,INPUT);}
+    if(pinConf[i]==2){           //digital out start low
+      digitalWrite(i,LOW);
+      pinMode(i,OUTPUT);}
+    if(pinConf[i]==3){           //digital out start high
+      digitalWrite(i,HIGH);
+      pinMode(i,OUTPUT);}
+    if(pinConf[i]==4&&i==(3||5||6||9||10||11)){//analog out//pwm
+      pinMode(i,OUTPUT);}
+    if(pinConf[i]==5&&i){     //digital input_pullup
+      pinMode(i,INPUT_PULLUP);}
   }//for
 }
 void eepromUpdate(){
-  for (int i=0;i<17;i++){
+  for (int i=0;i<18;i++){
     EEPROM.update(i, pinConf[i]);
   }//for
 }
-//=================================================================
