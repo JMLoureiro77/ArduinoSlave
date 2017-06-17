@@ -1,6 +1,18 @@
-//Master1 under hard work
-//no funcion la configuracion remota de pines de momento
+/*Master1
 
+
+
+
+Para referirse a los pines analogicos de esclavo:
+ A0    14
+ A1    15
+ A2    16
+ A3    17
+ A4 y A5 usados por bus iic
+ A6    20
+ A7    21
+
+*/
 
 #include <Wire.h>
 
@@ -10,22 +22,40 @@ byte a;
 
 String request;
 int inputInt[3];
-byte ind=0;
+
+int pinConf[19];
 int nVar[10];
+byte dw[19];
+byte dr[19];
+int ar[22];
+int aw[12];
+
+int dIN=1;    //digital in
+int dOUTL=2;   //digital out start low
+int dOUTH=3;  //digital out start high
+int aOUT=4;   //analog out (PWM) UNO,NANO(3,5,6,9,10,11)
+int dINP=5;   //digital input_pullup (inverted logic  1=low 0=high)
+
 
 void setup ()  {
 //  Wire.begin (D4,D3);   
  Wire.begin ();   
  Wire.setClockStretchLimit(40000);    // in µs
- Serial.begin (115200);  // start serial for output
+ Serial.begin (115200);  // start serial for Debug
  
 }  // end of setup
 //==================================================================================================
 void loop(){
 //==================================================================================================
-  gV(7);
- 
+
+
+if(pinConf[13]!= dOUTL){
+  confPin(13, dOUTL);  //configuro del pin 13 como salidadigital start LOW
+  }
+ dW(13,HIGH);
   delay (500);   
+ dW(13,LOW);
+  delay (750);   
 }  // end of loop
 //==================================================================================================
 void Comm(String request){
@@ -38,14 +68,11 @@ void Comm(String request){
 }
 void readResponse(){
   String inputString = "";
+  byte ind=0;
   Wire.requestFrom (SLAVE_ADDRESS, 1); 
   char inChar = Wire.read(); 
-        Serial.print (inChar);
-        Serial.println("*");
   int t = inChar;
-        Serial.println (t);
   Wire.requestFrom (SLAVE_ADDRESS, t);
-
     for(int i=0;i<t;i++){
       char inChar = (char)Wire.read();
     if (inChar != '.') {
@@ -55,9 +82,6 @@ void readResponse(){
       inputInt[ind]=inputString.toInt();
       inputString = "";
       ind++;
-      }
-    if (ind == 3) {
-      ind=0;
       }
   }//for
        Serial.println(inputInt[0]);
@@ -76,6 +100,7 @@ void dW(int pin, bool val){
   request+=val;
   request+=".";
   Comm(request);
+  dw[pin]=inputInt[2];
 }//=====================================================================================
 // dR() digital Read (slave pin )
 //=====================================================================================
@@ -85,6 +110,7 @@ void dR(int pin){
   request+=pin;
   request+=".0.";
   Comm(request);
+  dr[pin]=inputInt[2];
 }
 //=====================================================================================
 // aW() (slave pin, value )
@@ -97,6 +123,7 @@ void aW(int pin, int aWVal){//analog write
   request+=aWVal;
   request+=".";
   Comm(request);
+  aw[pin]=inputInt[2];
 }
 //=====================================================================================
 // anlogRead (Slave pin)
@@ -107,11 +134,12 @@ void aR(int pin){        //analog read
   request+=pin;
   request+=".0.";
   Comm(request);
+  ar[pin]=inputInt[2];
 }
 //=====================================================================================
-// send variable value
+// send variable value(Variable number, value)
 //=====================================================================================
-void sV(int nVar, int nVarV){ //send variavle, store variable in slave
+void sV(int nVar, int nVarV){ //send variable, store variable in slave
   request="";
   request+="5.";
   request+=nVar;
@@ -119,10 +147,9 @@ void sV(int nVar, int nVarV){ //send variavle, store variable in slave
   request+=nVarV;
   request+=".";
   Comm(request);
-  Serial.print();Serial.println(".");
 }
 //=====================================================================================
-// get variable value
+// get variable value(Variable number)
 //=====================================================================================
 void gV(int Var){     //get nVar
   request="";
@@ -131,5 +158,50 @@ void gV(int Var){     //get nVar
   request+=".0.";
   Comm(request);
   nVar[Var]=inputInt[2];
-  Serial.println(nVar[Var]);
+}
+//=====================================================================================
+// configure slave pin
+//=====================================================================================
+void confPin(int SlavePin, int Mode){
+/*  confVal
+  1   digital in
+  2   digital out start low
+  3   digital out start high
+  4   analog out (PWM) UNO,NANO(3,5,6,9,10,11)
+  5   digital input_pullup (invert logic  1=low 0=high)
+
+  defaut state is input if you not change nothing
+  send 0 to analog pins (14(A0),15(A1),16(A2),17(A3)) to return to adc if you have used in digital mode
+   18 & 19 used by IIC bus
+   Nano (20(A6) & 21(A7)) only adc mode
+*/
+if(Mode==4 & (SlavePin != 3||5||6||9||10||11)){
+  //Serial.println("not pwm pin");
+  }else{
+  request="";
+  request+="7.";
+  request+=SlavePin;
+  request+=".";
+  request+=Mode;
+  request+=".";
+  Comm(request);
+  pinConf[SlavePin]=inputInt[2];  
+  }
+}//=====================================================================================
+// get slave pin conf
+//=====================================================================================
+void gPinConf(int SlavePin){
+  request="";
+  request+="8.";
+  request+=SlavePin;
+  request+=".0.";
+  Comm(request);
+  pinConf[SlavePin]=inputInt[2];
+}
+//=====================================================================================
+// Clear slave pin configuration
+//=====================================================================================
+void clearSlavePinConf(){
+  request = "9.0.0.";
+  Comm(request);
 }
